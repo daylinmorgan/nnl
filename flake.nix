@@ -28,6 +28,7 @@
           pname = "nnl";
           version = "2024.1001";
           src = ./.;
+          buildInputs = with pkgs; [nix-prefetch-git];
         };
       };
     };
@@ -39,7 +40,7 @@
 
     devShells = forAllSystems (pkgs: {
       default = pkgs.mkShell {
-        buildInputs = with pkgs; [nim];
+        buildInputs = with pkgs; [nim nix-prefetch-git];
       };
     });
   };
