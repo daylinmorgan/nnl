@@ -59,13 +59,10 @@ options:
     of cmdEnd: discard
 
   case posArgs.len
-  of 0:
-    error "expected path to nimble.lock"
-    quit 1
   of 1:
     c.lockFile = posArgs[0]
+  of 0:
+    errQuit "expected path to nimble.lock"
   else:
-    error "expected one positional argument, but got `" & posArgs.join(" ") & "`"
-    quit 1
-
+    errQuit "expected one positional argument, but got `" & posArgs.join(" ") & "`"
   generateLockFile c
