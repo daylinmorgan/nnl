@@ -63,7 +63,6 @@ proc getArchiveUri(gitUrl, rev: string): Uri =
   result.path = result.path / "archive" / rev & ".tar.gz"
 
 proc testUri(uri: Uri): HttpCode =
-  info "TESTING!"
   var resp: Response
   let client = newHttpClient()
   try:
