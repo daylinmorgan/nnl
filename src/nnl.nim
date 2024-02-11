@@ -1,4 +1,4 @@
-import std/[strutils, json, logging,options, os, osproc, tables, uri, httpclient]
+import std/[strutils, json, logging, os, osproc, tables, uri, httpclient]
 
 var consoleLog = newConsoleLogger(useStdErr = true)
 addHandler(consoleLog)
@@ -22,10 +22,11 @@ type
     packages: seq[string]
 
   PrefetchData = object
-    `method`: Option[string]
+    `method`, sha256, path: string
+
+  PrefetchDataGit = object
     url, rev, date, path, sha256: string
     fetchLFS, fetchSubmodules, deepClone, leaveDotGit: bool
-
 
 proc errLogQuit(args: varargs[string, `$`]) =
   error args.join(" ")
@@ -35,12 +36,16 @@ proc dumpQuit(args: varargs[string, `$`]) =
   stderr.writeLine args.join(" ")
   quit 1
 
+proc `<-`(p1: var PrefetchData, p2: PrefetchDataGit) =
+  p1.sha256 = p2.sha256
+  p1.path = p2.path
+
 proc `<-`(f: var Fod, d: Dependency) =
   f.url = d.url
   f.rev = d.vcsRevision
 
 proc `<-`(f: var Fod, p: PrefetchData) =
-  f.`method` = get(p.`method`)
+  f.`method` = p.`method`
   f.path = p.path
   f.sha256 = p.sha256
 
@@ -49,12 +54,14 @@ proc parseDepsFromLockFile*(lockFile: string): Dependencies =
   if "packages" in lockData:
     result = lockData["packages"].to(Dependencies)
 
-proc parsePrefetch(prefetchJsonStr: string): PrefetchData =
+proc parsePrefetchGit(prefetchJsonStr: string): PrefetchData =
+  var prefetchData: PrefetchDataGit
   try:
-    result = parseJson(prefetchJsonStr).to(PrefetchData)
+    prefetchData = parseJson(prefetchJsonStr).to(PrefetchDataGit)
   except JsonParsingError:
     error "faild to parse nix-prefetch-git json"
     dumpQuit prefetchJsonStr
+  result <- prefetchData
 
 proc getArchiveUri(gitUrl, rev: string): Uri =
   result = parseUri(gitUrl)
@@ -87,7 +94,7 @@ proc nixPrefetchUrl(url: string): PrefetchData =
     if code != 0 or lines.len != 2:
       dumpQuit output
 
-    result.`method` = some("fetchzip")
+    result.`method` = "fetchzip"
     result.sha256 = lines[0]
     result.path = lines[1]
 
@@ -100,11 +107,10 @@ proc nixPrefetchGit(url: string, rev: string): PrefetchData =
   let (output, code) = execCmdEx(cmd)
   if code != 0:
     error "failed to prefetch: ", url
-    stderr.writeLine output
-    quit 1
+    dumpQuit output
 
-  result = parsePrefetch output
-  result.`method` = some("git")
+  result = parsePrefetchGit output
+  result.`method` = "git"
 
 
 proc fetch(c: NnlContext, f: var Fod) =
@@ -118,7 +124,6 @@ proc fetch(c: NnlContext, f: var Fod) =
   let archiveUrl = $getArchiveUri(f.url, f.rev)
   if not c.forceGit and testUri(uri) in {Http200, Http302}:
     let prefetchData = nixPrefetchUrl archiveUrl
-    # f.method = "fetchzip"
     f <- prefetchData
     f.url = archiveUrl
   else:
