@@ -1,0 +1,56 @@
+{
+  "version": 2,
+  "packages": {
+    "illwill": {
+      "version": "0.3.2",
+      "vcsRevision": "1d12cb36ab7b76c31d2d25fa421013ecb382e625",
+      "url": "https://github.com/johnnovak/illwill",
+      "downloadMethod": "git",
+      "dependencies": [],
+      "checksums": {
+        "sha1": "b19d00707e0b93c692364e5194276f6967ca53a3"
+      }
+    },
+    "zippy": {
+      "version": "0.10.11",
+      "vcsRevision": "9560f3d20479fb390c97f731ef8d100f1ed54e6c",
+      "url": "https://github.com/guzba/zippy",
+      "downloadMethod": "git",
+      "dependencies": [],
+      "checksums": {
+        "sha1": "12e761e18ccc0a1b0e931c74dd02bb4b74544d56"
+      }
+    },
+    "jsony": {
+      "version": "1.1.5",
+      "vcsRevision": "8770d7be70572f250bce69f2245dfbcf836a4d4b",
+      "url": "https://github.com/inv2004/jsony",
+      "downloadMethod": "git",
+      "dependencies": [],
+      "checksums": {
+        "sha1": "9fa7a9476c63719988ecc0eb94e7d82b97113468"
+      }
+    },
+    "parsetoml": {
+      "version": "0.7.1",
+      "vcsRevision": "6e5e16179fa2db60f2f37d8b1af4128aaa9c8aaf",
+      "url": "https://github.com/NimParsers/parsetoml.git",
+      "downloadMethod": "git",
+      "dependencies": [],
+      "checksums": {
+        "sha1": "586fe63467a674008c4445ed1b8ac882177d7103"
+      }
+    },
+    "asciigraph": {
+      "version": "0.1.2",
+      "vcsRevision": "9f51fc4e94d0960ab63fa6ea274518159720aa69",
+      "url": "https://github.com/Yardanico/asciigraph",
+      "downloadMethod": "git",
+      "dependencies": [],
+      "checksums": {
+        "sha1": "6b2ee742ac2329be1aa1bbedeef5b37a48295965"
+      }
+    }
+  },
+  "tasks": {}
+}
