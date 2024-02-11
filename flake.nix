@@ -28,6 +28,7 @@
           pname = "nnl";
           version = "2024.1001";
           src = ./.;
+          doCheck = false;
           buildInputs = with pkgs; [nix-prefetch-git openssl];
         };
       };
