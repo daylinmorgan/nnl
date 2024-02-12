@@ -209,9 +209,7 @@ proc checkDeps() =
 proc nnl(c: NnlContext) =
   checkDeps()
   let data = generateLockFile c
-  stdout.write (pretty data)
-
-
+  stdout.writeLine (pretty data)
 
 
 when isMainModule:
