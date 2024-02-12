@@ -1,4 +1,4 @@
-import std/[strutils, json, logging, os, osproc, tables, uri, httpclient]
+import std/[ httpclient, json, logging, os, osproc,parsecfg, strutils,tables, uri, ]
 
 var consoleLog = newConsoleLogger(useStdErr = true)
 addHandler(consoleLog)
@@ -36,6 +36,32 @@ proc dumpQuit(args: varargs[string, `$`]) =
   stderr.writeLine args.join(" ")
   quit 1
 
+proc findNimbleFile(p: string): string =
+  var candidates: seq[string]
+  for kind, path in walkDir(p):
+    case kind:
+      of pcFile, pcLinkToFile:
+        if path.endsWith(".nimble"):
+          candidates.add path
+      else: discard
+  # nimble will probably prevent this,
+  # but not sure about atlas or bespoke builds
+  if candidates.len == 1:
+    return candidates[0]
+  elif candidates.len > 1:
+    error "found multiple nimble files: " & candidates.join(", ")
+  else:
+    error "failed to find a nimble file"
+
+type
+  NimbleMetadata = object
+    srcDir: string
+
+proc getNimbleMetadata(nimbleFilePath: string): NimbleMetadata =
+  let nimbleFile = findNimbleFile(nimbleFilePath)
+  let nimbleCfg = loadConfig(nimbleFile)
+  result.srcDir = nimbleCfg.getSectionValue("", "srcDir","")
+
 proc `<-`(p1: var PrefetchData, p2: PrefetchDataGit) =
   p1.sha256 = p2.sha256
   p1.path = p2.path
@@ -48,6 +74,9 @@ proc `<-`(f: var Fod, p: PrefetchData) =
   f.`method` = p.`method`
   f.path = p.path
   f.sha256 = p.sha256
+
+proc `<-`(f: var Fod, m: NimbleMetadata) =
+  f.srcDir = m.srcDir
 
 proc parseDepsFromLockFile*(lockFile: string): Dependencies =
   let lockData = parseFile(lockFile)
@@ -84,7 +113,7 @@ proc nixPrefetchUrl(url: string): PrefetchData =
     let cmd = [
       "nix-prefetch-url",
       url,
-      "--type sha256 --print-path --unpack"].join(" ")
+      "--type sha256 --print-path --unpack --name source"].join(" ")
     let (output, code) = execCmdEx(cmd)
     let lines = output.strip().splitLines()
     if code != 0:
@@ -130,6 +159,8 @@ proc fetch(c: NnlContext, f: var Fod) =
     let prefetchData = nixPrefetchGit(cloneUrl, f.rev)
     f <- prefetchData
     f.url = cloneUrl
+
+  f <- getNimbleMetadata(f.path)
 
 proc genFod(c: NnlContext, package: string, d: Dependency): Fod =
   result = Fod()
