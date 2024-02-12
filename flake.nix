@@ -36,8 +36,8 @@
         buildInputs = with pkgs; [
           nim
           openssl
+          nix
           nix-prefetch-git
-          nix-prefetch
         ];
       };
     });
