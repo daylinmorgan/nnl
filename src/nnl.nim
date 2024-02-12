@@ -1,4 +1,7 @@
-import std/[httpclient, json, logging, os, osproc, parsecfg, strutils, tables, uri, ]
+import std/[
+  httpclient, json, logging, os, osproc,
+  options, parsecfg, strutils, tables, uri
+]
 
 var consoleLog = newConsoleLogger(useStdErr = true)
 addHandler(consoleLog)
@@ -9,7 +12,7 @@ type
 
   NnlContext* = object
     lockFile*: string
-    forceGit: bool
+    forceGit*: bool
 
   Checksums = object
     sha1: string
@@ -23,10 +26,12 @@ type
 
   Fod = object
     `method`, path, rev, sha256, srcDir, url, subDir: string
+    fetchSubmodules, leaveDotGit: Option[bool]
     packages: seq[string]
 
   PrefetchData = object
     `method`, sha256, path, url: string
+    fetchSubmodules, leaveDotGit: Option[bool]
 
   PrefetchDataGit = object
     url, rev, date, path, sha256: string
@@ -39,6 +44,17 @@ proc errLogQuit(args: varargs[string, `$`]) =
 proc dumpQuit(args: varargs[string, `$`]) =
   stderr.writeLine args.join(" ")
   quit 1
+
+
+proc `%`*(o: Fod): JsonNode =
+  ## Construct JsonNode from Fod.
+  result = newJObject()
+  for k, v in o.fieldPairs:
+    when compiles(v.isSome):
+      if v.isSome:
+        result[k] = %(get v)
+    else:
+      result[k] = %v
 
 proc findNimbleFile(p: string): string =
   var candidates: seq[string]
@@ -65,6 +81,8 @@ proc getNimbleMetadata(nimbleFilePath: string): NimbleMetadata =
 proc `<-`(p1: var PrefetchData, p2: PrefetchDataGit) =
   p1.sha256 = p2.sha256
   p1.path = p2.path
+  p1.fetchSubmodules = some p2.fetchSubmodules
+  p1.leaveDotGit = some p2.leaveDotGit
 
 proc `<-`(f: var Fod, d: Dependency) =
   f.url = d.url
@@ -75,6 +93,10 @@ proc `<-`(f: var Fod, p: PrefetchData) =
   f.path = p.path
   f.sha256 = p.sha256
   f.url = p.url
+  if p.fetchSubmodules.isSome():
+    f.fetchSubmodules = p.fetchSubmodules
+  if p.leaveDotGit.isSome:
+    f.leaveDotGit = p.leaveDotGit
 
 proc `<-`(f: var Fod, m: NimbleMetadata) =
   f.srcDir = m.srcDir
@@ -115,7 +137,7 @@ proc nixPrefetchUrl(url: string): PrefetchData =
     "nix-prefetch-url",
     url,
     "--type sha256 --print-path --unpack --name source"].join(" ")
-  let (output, code) = execCmdEx(cmd)
+  let (output, code) = execCmdEx(cmd, options = {poUsePath})
   let lines = output.strip().splitLines()
   if code != 0:
     error "failed to prefetch: ", url
@@ -135,7 +157,7 @@ proc nixPrefetchGit(url: string, rev: string): PrefetchData =
     "nix-prefetch-git",
     "--url", url, "--rev", rev, "--fetch-submodules --quiet"
   ].join(" ")
-  let (output, code) = execCmdEx(cmd)
+  let (output, code) = execCmdEx(cmd, options = {poUsePath})
   if code != 0:
     error "failed to prefetch: ", url
     dumpQuit output
@@ -185,8 +207,12 @@ proc checkDeps() =
     errLogQuit "nix-prefetch-git not found"
 
 proc nnl(c: NnlContext) =
+  checkDeps()
   let data = generateLockFile c
   stdout.write (pretty data)
+
+
+
 
 when isMainModule:
   import std/parseopt
@@ -218,12 +244,12 @@ options:
         c.forceGit = true
     of cmdEnd: discard
 
-  checkDeps()
   case posArgs.len
   of 1:
     c.lockFile = posArgs[0]
   of 0:
     errLogQuit "expected path to nimble.lock"
   else:
-    errLogQuit "expected one positional argument, but got `" & posArgs.join(
-        " ") & "`"
+    errLogQuit "expected one positional argument, but got `" &
+      posArgs.join(" ") & "`"
+  nnl c

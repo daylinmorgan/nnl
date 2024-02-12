@@ -16,12 +16,11 @@ jobs:
   run-tests:
     runs-on: ubuntu-latest
     steps:
-    - run: echo $LD_LIBRARY_PATH
     - uses: actions/checkout@v4
     - name: Install Nix
       uses: DeterminateSystems/nix-installer-action@main
     - uses: DeterminateSystems/magic-nix-cache-action@v2
-    - name: run tests
+    - name: Run Tests
       run: nix develop --command nim c -r tests/tnnl.nim
 
 
