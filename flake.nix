@@ -29,7 +29,14 @@
           version = "2024.1001";
           src = ./.;
           doCheck = false;
-          buildInputs = with pkgs; [nix-prefetch-git openssl];
+          buildInputs = [pkgs.openssl];
+          nativeBuildInputs = [pkgs.makeWrapper];
+          postFixup = ''
+            wrapProgram $out/bin/nnl \
+            --set PATH ${makeBinPath [
+              pkgs.nix-prefetch-git
+            ]}
+          '';
         };
       };
     };
