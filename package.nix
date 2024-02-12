@@ -2,8 +2,9 @@
   lib,
   buildNimPackage,
   nix,
-  nix-prefetch-git,
   openssl,
+  nimble,
+  nix-prefetch-git,
   makeWrapper,
 }:
 buildNimPackage (final: {
@@ -17,7 +18,7 @@ buildNimPackage (final: {
   doCheck = false;
   postFixup = ''
     wrapProgram $out/bin/nnl \
-      --suffix PATH : ${lib.makeBinPath [nix nix-prefetch-git]}
+      --suffix PATH : ${lib.makeBinPath [nix nix-prefetch-git nimble]}
   '';
 
   meta = with lib; {

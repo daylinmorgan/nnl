@@ -35,6 +35,7 @@
       default = pkgs.mkShell {
         buildInputs = with pkgs; [
           nim
+          nimble
           openssl
           nix
           nix-prefetch-git
