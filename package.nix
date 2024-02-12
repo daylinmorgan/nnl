@@ -10,7 +10,7 @@ buildNimPackage (final: {
   pname = "nnl";
   version = "2024.1001";
 
-  src = ./.;
+  src = lib.cleanSource ./.;
   buildInputs = [openssl];
   nativeBuildInputs = [makeWrapper];
 
