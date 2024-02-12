@@ -1,10 +1,14 @@
-import std/[unittest, os]
+import std/[json, os, unittest]
 import nnl
 
-const lockFilePath = currentSourcePath().parentDir / "nimlangserver-nimble.lock"
-let c = NnlContext(lockFile: lockFilePath)
+const nimbleLockFilePath = currentSourcePath().parentDir /
+    "ttop-v1.2.8-nimble.lock"
+const nixLockFilePath = currentSourcePath().parentDir / "ttop-v1.2.8-lock.json"
 
-suite "basic":
-  test "parsing":
-    discard parseDepsFromLockFile(c.lockFile)
+let c = NnlContext(lockFile: nimbleLockFilePath)
+let data = parseFile(nixLockFilePath)
+
+suite "integration":
+  test "ttop":
+    check data == generateLockFile(c)
 

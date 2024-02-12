@@ -41,7 +41,12 @@
 
     devShells = forAllSystems (pkgs: {
       default = pkgs.mkShell {
-        buildInputs = with pkgs; [nim nix-prefetch-git openssl];
+        buildInputs = with pkgs; [
+          nim
+          openssl
+          nix-prefetch-git
+          nix # github actions fail using default nix...
+        ];
       };
     });
   };
