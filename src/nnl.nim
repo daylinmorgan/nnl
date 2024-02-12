@@ -1,28 +1,32 @@
-import std/[ httpclient, json, logging, os, osproc,parsecfg, strutils,tables, uri, ]
+import std/[httpclient, json, logging, os, osproc, parsecfg, strutils, tables, uri, ]
 
 var consoleLog = newConsoleLogger(useStdErr = true)
 addHandler(consoleLog)
 
 type
+  NimbleMetadata = object
+    srcDir: string
+
   NnlContext* = object
     lockFile*: string
     forceGit: bool
 
   Checksums = object
     sha1: string
+
   Dependency = object
     version, vcsRevision, url, downloadMethod: string
     dependencies: seq[string]
     checksums: Checksums
 
-  Dependencies = Table[string,Dependency]
+  Dependencies = Table[string, Dependency]
 
   Fod = object
     `method`, path, rev, sha256, srcDir, url, subDir: string
     packages: seq[string]
 
   PrefetchData = object
-    `method`, sha256, path: string
+    `method`, sha256, path, url: string
 
   PrefetchDataGit = object
     url, rev, date, path, sha256: string
@@ -53,14 +57,10 @@ proc findNimbleFile(p: string): string =
   else:
     error "failed to find a nimble file"
 
-type
-  NimbleMetadata = object
-    srcDir: string
-
 proc getNimbleMetadata(nimbleFilePath: string): NimbleMetadata =
   let nimbleFile = findNimbleFile(nimbleFilePath)
   let nimbleCfg = loadConfig(nimbleFile)
-  result.srcDir = nimbleCfg.getSectionValue("", "srcDir","")
+  result.srcDir = nimbleCfg.getSectionValue("", "srcDir", "")
 
 proc `<-`(p1: var PrefetchData, p2: PrefetchDataGit) =
   p1.sha256 = p2.sha256
@@ -74,6 +74,7 @@ proc `<-`(f: var Fod, p: PrefetchData) =
   f.`method` = p.`method`
   f.path = p.path
   f.sha256 = p.sha256
+  f.url = p.url
 
 proc `<-`(f: var Fod, m: NimbleMetadata) =
   f.srcDir = m.srcDir
@@ -108,24 +109,25 @@ proc testUri(uri: Uri): HttpCode =
   result = resp.code
 
 
-proc nixPrefetchUrl(url: string): PrefetchData = 
-    debug "prefetching archive: ", url
-    let cmd = [
-      "nix-prefetch-url",
-      url,
-      "--type sha256 --print-path --unpack --name source"].join(" ")
-    let (output, code) = execCmdEx(cmd)
-    let lines = output.strip().splitLines()
-    if code != 0:
-      error "failed to prefetch: ", url
-    if lines.len != 2:
-      error "expected 2 lines from nix-prefetch-url output, got ", lines.len
-    if code != 0 or lines.len != 2:
-      dumpQuit output
+proc nixPrefetchUrl(url: string): PrefetchData =
+  debug "prefetching archive: ", url
+  let cmd = [
+    "nix-prefetch-url",
+    url,
+    "--type sha256 --print-path --unpack --name source"].join(" ")
+  let (output, code) = execCmdEx(cmd)
+  let lines = output.strip().splitLines()
+  if code != 0:
+    error "failed to prefetch: ", url
+  if lines.len != 2:
+    error "expected 2 lines from nix-prefetch-url output, got ", lines.len
+  if code != 0 or lines.len != 2:
+    dumpQuit output
 
-    result.`method` = "fetchzip"
-    result.sha256 = lines[0]
-    result.path = lines[1]
+  result.`method` = "fetchzip"
+  result.sha256 = lines[0]
+  result.path = lines[1]
+  result.url = url
 
 proc nixPrefetchGit(url: string, rev: string): PrefetchData =
   debug "prefetching repo: ", url
@@ -137,9 +139,9 @@ proc nixPrefetchGit(url: string, rev: string): PrefetchData =
   if code != 0:
     error "failed to prefetch: ", url
     dumpQuit output
-
   result = parsePrefetchGit output
   result.`method` = "git"
+  result.url = url
 
 
 proc fetch(c: NnlContext, f: var Fod) =
@@ -151,15 +153,12 @@ proc fetch(c: NnlContext, f: var Fod) =
     uri.query = ""
   let cloneUrl = $uri
   let archiveUrl = $getArchiveUri(f.url, f.rev)
-  if not c.forceGit and testUri(uri) in {Http200, Http302}:
-    let prefetchData = nixPrefetchUrl archiveUrl
-    f <- prefetchData
-    f.url = archiveUrl
-  else:
-    let prefetchData = nixPrefetchGit(cloneUrl, f.rev)
-    f <- prefetchData
-    f.url = cloneUrl
-
+  let prefetchData =
+    if not c.forceGit and testUri(uri) in {Http200, Http302}:
+      nixPrefetchUrl archiveUrl
+    else:
+      nixPrefetchGit cloneUrl, f.rev
+  f <- prefetchData
   f <- getNimbleMetadata(f.path)
 
 proc genFod(c: NnlContext, package: string, d: Dependency): Fod =
@@ -168,22 +167,26 @@ proc genFod(c: NnlContext, package: string, d: Dependency): Fod =
   result <- d
   fetch c, result
 
-proc generateLockFile*(c: NnlContext) =
+proc generateLockFile*(c: NnlContext): JsonNode =
   info "parsing: ", c.lockFile
   if not fileExists c.lockFile:
     errLogQuit c.lockFile, "does not exist"
   var fods: seq[Fod]
   let dependencies = parseDepsFromLockFile c.lockFile
   for name, dep in dependencies:
-    if name.toLowerAscii() notin ["nim","compiler"]:
+    if name.toLowerAscii() notin ["nim", "compiler"]:
       fods.add genFod(c, name, dep)
-  stdout.write (%* {"depends": fods })
+  return ( %* {"depends": fods})
 
-proc checkDeps() = 
+proc checkDeps() =
   if (findExe "nix-prefetch-url") == "":
     errLogQuit "nix-prefetch-url not found"
   if (findExe "nix-prefetch-git") == "":
     errLogQuit "nix-prefetch-git not found"
+
+proc nnl(c: NnlContext) =
+  let data = generateLockFile c
+  stdout.write (pretty data)
 
 when isMainModule:
   import std/parseopt
@@ -203,7 +206,7 @@ options:
 """
   var c = NnlContext()
   var posArgs: seq[string]
-  for kind, key, val in getopt(shortNoVal = {'h'}, longNoVal = @["help","force-git"]):
+  for kind, key, val in getopt(shortNoVal = {'h'}, longNoVal = @["help", "force-git"]):
     case kind
     of cmdArgument:
       posArgs.add key
@@ -222,5 +225,5 @@ options:
   of 0:
     errLogQuit "expected path to nimble.lock"
   else:
-    errLogQuit "expected one positional argument, but got `" & posArgs.join(" ") & "`"
-  generateLockFile c
+    errLogQuit "expected one positional argument, but got `" & posArgs.join(
+        " ") & "`"
