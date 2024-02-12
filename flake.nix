@@ -21,27 +21,14 @@
         }));
   in {
     overlays = {
-      default = final: _prev: let
-        pkgs = final;
-      in {
-        nnl = pkgs.buildNimPackage {
-          pname = "nnl";
-          version = "2024.1001";
-          src = ./.;
-          doCheck = false;
-          buildInputs = [pkgs.openssl];
-          nativeBuildInputs = [pkgs.makeWrapper];
-          postFixup = ''
-            wrapProgram $out/bin/nnl \
-            --suffix PATH : ${makeBinPath (with pkgs; [nix-prefetch nix-prefetch-git])}
-          '';
-        };
+      default = final: _prev: {
+        nnl = final.callPackage ./package.nix {};
       };
     };
 
     packages = forAllSystems (pkgs: {
-      default = self.packages.${pkgs.system}.nnl;
       nnl = pkgs.nnl;
+      default = self.packages.${pkgs.system}.nnl;
     });
 
     devShells = forAllSystems (pkgs: {
@@ -51,7 +38,6 @@
           openssl
           nix-prefetch-git
           nix-prefetch
-          # nix # github actions fail using default nix...
         ];
       };
     });
