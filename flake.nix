@@ -33,9 +33,7 @@
           nativeBuildInputs = [pkgs.makeWrapper];
           postFixup = ''
             wrapProgram $out/bin/nnl \
-            --set PATH ${makeBinPath [
-              pkgs.nix-prefetch-git
-            ]}
+            --suffix PATH : ${makeBinPath (with pkgs; [nix-prefetch nix-prefetch-git])}
           '';
         };
       };
@@ -52,7 +50,8 @@
           nim
           openssl
           nix-prefetch-git
-          nix # github actions fail using default nix...
+          nix-prefetch
+          # nix # github actions fail using default nix...
         ];
       };
     });
