@@ -1,0 +1,88 @@
+{
+  "depends": [
+    {
+      "method": "git",
+      "path": "/nix/store/8f8h69vcl77zz09ncqdx629shxxz6kdg-nim-regex-cb8b7bf",
+      "rev": "cb8b7bfdcdc2272aadf92153c668acd3c901bd6b",
+      "sha256": "1ggp5rvs217dv2n0p5ddm5h17pv2mc7724n8cd0b393kmsjiykhz",
+      "srcDir": "src",
+      "url": "https://github.com/nitely/nim-regex",
+      "subDir": "",
+      "fetchSubmodules": true,
+      "leaveDotGit": false,
+      "packages": [
+        "regex"
+      ]
+    },
+    {
+      "method": "git",
+      "path": "/nix/store/9z4mi8bx7fkkkm8ijzxvg73kb2dw84v5-nim-ncurses-1027fe1",
+      "rev": "1027fe13d091583608e7e7da3c3e0d13aceb4b11",
+      "sha256": "1cx9vgddy8h67mijxdybaqvkj7was7jcpjykw4jnxcgyy2svd60w",
+      "srcDir": "",
+      "url": "https://github.com/walkre-niboshi/nim-ncurses",
+      "subDir": "",
+      "fetchSubmodules": true,
+      "leaveDotGit": false,
+      "packages": [
+        "ncurses"
+      ]
+    },
+    {
+      "method": "git",
+      "path": "/nix/store/1ily3f79n0f9pfhnf1z32z0pn77z1c5h-nim-unicodedb-b055310",
+      "rev": "b055310c08db8f879057b4fec15c8301ee93bb2a",
+      "sha256": "0w77h75vrgp6jiq4dd9i2m4za2cf8qhjkz2wlxiz27yn2isjrndy",
+      "srcDir": "src",
+      "url": "https://github.com/nitely/nim-unicodedb",
+      "subDir": "",
+      "fetchSubmodules": true,
+      "leaveDotGit": false,
+      "packages": [
+        "unicodedb"
+      ]
+    },
+    {
+      "method": "git",
+      "path": "/nix/store/1wdjqw12nfb9myjdr5bihghjrlznk7di-jsony-ea811be",
+      "rev": "ea811bec7fa50f5abd3088ba94cda74285e93f18",
+      "sha256": "1720iqsxjhqmhw1zhhs7d2ncdz25r8fqadls1p1iry1wfikjlnba",
+      "srcDir": "src",
+      "url": "https://github.com/treeform/jsony",
+      "subDir": "",
+      "fetchSubmodules": true,
+      "leaveDotGit": false,
+      "packages": [
+        "jsony"
+      ]
+    },
+    {
+      "method": "git",
+      "path": "/nix/store/sskmpq7fqax2x2wydb1lhyac4ikx5p6p-nim-results-57b2392",
+      "rev": "57b2392ad69849e3e2d02b74a8a0feee2c3d9570",
+      "sha256": "1wma3dhrrdfxn05ds6yiv9mj071czv90x06bm7f5rslzk0s7m1af",
+      "srcDir": "",
+      "url": "https://github.com/arnetheduck/nim-results",
+      "subDir": "",
+      "fetchSubmodules": true,
+      "leaveDotGit": false,
+      "packages": [
+        "results"
+      ]
+    },
+    {
+      "method": "git",
+      "path": "/nix/store/wf04ci35qry833v838pmhg38yg2kbyi3-parsetoml-6e5e161",
+      "rev": "6e5e16179fa2db60f2f37d8b1af4128aaa9c8aaf",
+      "sha256": "0lsgzbjlgd0h9859yn864y9h9h1v4f5jjk81yvfnlkc9zbwb5kfa",
+      "srcDir": "src",
+      "url": "https://github.com/NimParsers/parsetoml.git",
+      "subDir": "",
+      "fetchSubmodules": true,
+      "leaveDotGit": false,
+      "packages": [
+        "parsetoml"
+      ]
+    }
+  ]
+}

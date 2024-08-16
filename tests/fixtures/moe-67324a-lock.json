@@ -1,0 +1,76 @@
+{
+  "depends": [
+    {
+      "method": "fetchzip",
+      "path": "/nix/store/y6w1gzbf6i691z35rbn6kzrmf1n5bmdc-source",
+      "rev": "cb8b7bfdcdc2272aadf92153c668acd3c901bd6b",
+      "sha256": "1ggp5rvs217dv2n0p5ddm5h17pv2mc7724n8cd0b393kmsjiykhz",
+      "srcDir": "src",
+      "url": "https://github.com/nitely/nim-regex/archive/cb8b7bfdcdc2272aadf92153c668acd3c901bd6b.tar.gz",
+      "subDir": "",
+      "packages": [
+        "regex"
+      ]
+    },
+    {
+      "method": "fetchzip",
+      "path": "/nix/store/lx7qcqgwvh473vbz1n15pgbpw49kzrbf-source",
+      "rev": "1027fe13d091583608e7e7da3c3e0d13aceb4b11",
+      "sha256": "1cx9vgddy8h67mijxdybaqvkj7was7jcpjykw4jnxcgyy2svd60w",
+      "srcDir": "",
+      "url": "https://github.com/walkre-niboshi/nim-ncurses/archive/1027fe13d091583608e7e7da3c3e0d13aceb4b11.tar.gz",
+      "subDir": "",
+      "packages": [
+        "ncurses"
+      ]
+    },
+    {
+      "method": "fetchzip",
+      "path": "/nix/store/wpilzdf8vdwp7w129yrl821p9qvl3ky3-source",
+      "rev": "b055310c08db8f879057b4fec15c8301ee93bb2a",
+      "sha256": "0w77h75vrgp6jiq4dd9i2m4za2cf8qhjkz2wlxiz27yn2isjrndy",
+      "srcDir": "src",
+      "url": "https://github.com/nitely/nim-unicodedb/archive/b055310c08db8f879057b4fec15c8301ee93bb2a.tar.gz",
+      "subDir": "",
+      "packages": [
+        "unicodedb"
+      ]
+    },
+    {
+      "method": "fetchzip",
+      "path": "/nix/store/bzcq8q439rdsqhhihikzv3rsx4l4ybdm-source",
+      "rev": "ea811bec7fa50f5abd3088ba94cda74285e93f18",
+      "sha256": "1720iqsxjhqmhw1zhhs7d2ncdz25r8fqadls1p1iry1wfikjlnba",
+      "srcDir": "src",
+      "url": "https://github.com/treeform/jsony/archive/ea811bec7fa50f5abd3088ba94cda74285e93f18.tar.gz",
+      "subDir": "",
+      "packages": [
+        "jsony"
+      ]
+    },
+    {
+      "method": "fetchzip",
+      "path": "/nix/store/d2k2zimyby03ppam7a3jagjp64s7kv66-source",
+      "rev": "57b2392ad69849e3e2d02b74a8a0feee2c3d9570",
+      "sha256": "1wma3dhrrdfxn05ds6yiv9mj071czv90x06bm7f5rslzk0s7m1af",
+      "srcDir": "",
+      "url": "https://github.com/arnetheduck/nim-results/archive/57b2392ad69849e3e2d02b74a8a0feee2c3d9570.tar.gz",
+      "subDir": "",
+      "packages": [
+        "results"
+      ]
+    },
+    {
+      "method": "fetchzip",
+      "path": "/nix/store/nrgl7ks2x3svv6pkdxzr97d6jbd3zhlr-source",
+      "rev": "6e5e16179fa2db60f2f37d8b1af4128aaa9c8aaf",
+      "sha256": "0lsgzbjlgd0h9859yn864y9h9h1v4f5jjk81yvfnlkc9zbwb5kfa",
+      "srcDir": "src",
+      "url": "https://github.com/NimParsers/parsetoml/archive/6e5e16179fa2db60f2f37d8b1af4128aaa9c8aaf.tar.gz",
+      "subDir": "",
+      "packages": [
+        "parsetoml"
+      ]
+    }
+  ]
+}

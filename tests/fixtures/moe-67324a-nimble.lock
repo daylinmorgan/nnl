@@ -1,0 +1,68 @@
+{
+  "version": 2,
+  "packages": {
+    "jsony": {
+      "version": "1.1.5",
+      "vcsRevision": "ea811bec7fa50f5abd3088ba94cda74285e93f18",
+      "url": "https://github.com/treeform/jsony",
+      "downloadMethod": "git",
+      "dependencies": [],
+      "checksums": {
+        "sha1": "6aeb83e7481ca8686396a568096054bc668294df"
+      }
+    },
+    "ncurses": {
+      "version": "1.0.2",
+      "vcsRevision": "1027fe13d091583608e7e7da3c3e0d13aceb4b11",
+      "url": "https://github.com/walkre-niboshi/nim-ncurses",
+      "downloadMethod": "git",
+      "dependencies": [],
+      "checksums": {
+        "sha1": "4d2030b6553c67f663fd96e68e6575bb9a181395"
+      }
+    },
+    "parsetoml": {
+      "version": "0.7.1",
+      "vcsRevision": "6e5e16179fa2db60f2f37d8b1af4128aaa9c8aaf",
+      "url": "https://github.com/NimParsers/parsetoml.git",
+      "downloadMethod": "git",
+      "dependencies": [],
+      "checksums": {
+        "sha1": "586fe63467a674008c4445ed1b8ac882177d7103"
+      }
+    },
+    "unicodedb": {
+      "version": "0.12.0",
+      "vcsRevision": "b055310c08db8f879057b4fec15c8301ee93bb2a",
+      "url": "https://github.com/nitely/nim-unicodedb",
+      "downloadMethod": "git",
+      "dependencies": [],
+      "checksums": {
+        "sha1": "4452416471e2fe8726eb6070ed6ea7368171cc09"
+      }
+    },
+    "regex": {
+      "version": "0.25.0",
+      "vcsRevision": "cb8b7bfdcdc2272aadf92153c668acd3c901bd6b",
+      "url": "https://github.com/nitely/nim-regex",
+      "downloadMethod": "git",
+      "dependencies": [
+        "unicodedb"
+      ],
+      "checksums": {
+        "sha1": "cb2e24397c051e55ad5b72b3c0d4f270a90084df"
+      }
+    },
+    "results": {
+      "version": "0.5.0",
+      "vcsRevision": "57b2392ad69849e3e2d02b74a8a0feee2c3d9570",
+      "url": "https://github.com/arnetheduck/nim-results",
+      "downloadMethod": "git",
+      "dependencies": [],
+      "checksums": {
+        "sha1": "901e2ed088160fdcb8fdf3b315ce62baedc3f7ba"
+      }
+    }
+  },
+  "tasks": {}
+}
