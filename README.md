@@ -8,5 +8,7 @@ no version/dependency inference and simply translates a
 
 ```sh
 nix run "github:daylinmorgan/nnl" nimble.lock > lock.json
+nix run "github:daylinmorgan/nnl" nimble.lock --output lock.json
+nix run "github:daylinmorgan/nnl" nimble.lock -o:lock.json
 ```
 

@@ -13,6 +13,7 @@ type
   NnlContext* = object
     lockFile*: string
     forceGit*: bool
+    output: string
 
   Checksums = object
     sha1: string
@@ -208,8 +209,11 @@ proc checkDeps() =
 
 proc nnl(c: NnlContext) =
   checkDeps()
-  let data = generateLockFile c
-  stdout.writeLine (pretty data)
+  let data = pretty(generateLockFile c)
+  if c.output != "":
+    writeFile(c.output, data)
+  else:
+    stdout.writeLine(data)
 
 
 when isMainModule:
@@ -225,7 +229,8 @@ usage:
   nnl <path/to/nimble.lock> [opts]
 
 options:
-  -h, --help show this help
+  -h, --help   show this help
+  -o, --output path/to/lock.json (default stdout)
   --force-git  force use of nix-prefetch-git
 """
   var c = NnlContext()
@@ -240,6 +245,8 @@ options:
         echo usage; quit 0
       of "force-git":
         c.forceGit = true
+      of "o", "output":
+        c.output = val
     of cmdEnd: discard
 
   case posArgs.len
