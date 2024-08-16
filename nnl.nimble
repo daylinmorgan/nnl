@@ -1,6 +1,6 @@
 # Package
 
-version       = "2024.1001"
+version       = "2024.1002"
 author        = "Daylin Morgan"
 description   = "nim nix lock"
 license       = "MIT"
