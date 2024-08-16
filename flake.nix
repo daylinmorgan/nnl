@@ -3,17 +3,17 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    systems.url = "github:nix-systems/default";
   };
 
   outputs = {
     self,
     nixpkgs,
-    systems,
+    ...
   }: let
-    inherit (nixpkgs.lib) genAttrs makeBinPath;
+    inherit (nixpkgs.lib) genAttrs;
+    systems =  [ "x86_64-linux" "x86_64-darwin" "aarch64-linux" "aarch64-darwin"];
     forAllSystems = f:
-      genAttrs (import systems)
+     genAttrs systems
       (system:
         f (import nixpkgs {
           localSystem.system = system;
@@ -33,7 +33,7 @@
 
     devShells = forAllSystems (pkgs: {
       default = pkgs.mkShell {
-        buildInputs = with pkgs; [
+        packages = with pkgs; [
           nim
           openssl
           nix
@@ -41,5 +41,6 @@
         ];
       };
     });
+    formatter  = forAllSystems (pkgs: pkgs.nixfmt-rfc-style);
   };
 }

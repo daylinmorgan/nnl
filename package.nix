@@ -25,7 +25,7 @@ buildNimPackage (final: {
     license = licenses.mit;
     homepage = "https://github.com/daylinmorgan/nnl";
     mainProgram = "nnl";
-    platforms = lib.platforms.unix;
+    platforms = platforms.unix;
     maintainers = with maintainers; [daylinmorgan];
   };
   #
