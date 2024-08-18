@@ -235,7 +235,9 @@ options:
 """
   var c = NnlContext()
   var posArgs: seq[string]
-  for kind, key, val in getopt(shortNoVal = {'h'}, longNoVal = @["help", "force-git"]):
+  for kind, key, val in getopt(
+    shortNoVal = {'h'}, longNoVal = @["help", "force-git"]
+  ):
     case kind
     of cmdArgument:
       posArgs.add key
