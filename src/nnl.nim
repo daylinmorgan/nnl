@@ -1,6 +1,6 @@
 import std/[
   httpclient, json, logging, os, osproc,
-  options, parsecfg, strutils, tables, uri
+  options, parsecfg, strformat, strutils, tables, uri
 ]
 
 var consoleLog = newConsoleLogger(useStdErr = true)
@@ -112,7 +112,7 @@ proc parsePrefetchGit(prefetchJsonStr: string): PrefetchData =
   try:
     prefetchData = parseJson(prefetchJsonStr).to(PrefetchDataGit)
   except JsonParsingError:
-    error "faild to parse nix-prefetch-git json"
+    error "failed to parse nix-prefetch-git json"
     dumpQuit prefetchJsonStr
   result <- prefetchData
 
@@ -134,10 +134,8 @@ proc testUri(uri: Uri): HttpCode =
 
 proc nixPrefetchUrl(url: string): PrefetchData =
   debug "prefetching archive: ", url
-  let cmd = [
-    "nix-prefetch-url",
-    url,
-    "--type sha256 --print-path --unpack --name source"].join(" ")
+  let cmd =
+    fmt"nix-prefetch-url {url} --type sha256 --print-path --unpack --name source"
   let (output, code) = execCmdEx(cmd, options = {poUsePath})
   let lines = output.strip().splitLines()
   if code != 0:
@@ -154,10 +152,8 @@ proc nixPrefetchUrl(url: string): PrefetchData =
 
 proc nixPrefetchGit(url: string, rev: string): PrefetchData =
   debug "prefetching repo: ", url
-  let cmd = [
-    "nix-prefetch-git",
-    "--url", url, "--rev", rev, "--fetch-submodules --quiet"
-  ].join(" ")
+  let cmd =
+    fmt"nix-prefetch-git --url {url} --rev {rev} --fetch-submodules --quiet"
   let (output, code) = execCmdEx(cmd, options = {poUsePath})
   if code != 0:
     error "failed to prefetch: ", url
