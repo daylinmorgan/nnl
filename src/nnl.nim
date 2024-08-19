@@ -207,7 +207,7 @@ proc nnl(c: NnlContext) =
   checkDeps()
   let data = pretty(generateLockFile c)
   if c.output != "":
-    writeFile(c.output, data)
+    writeFile(c.output, data & "\n")
   else:
     stdout.writeLine(data)
 
