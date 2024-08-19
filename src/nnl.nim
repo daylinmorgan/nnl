@@ -1,10 +1,10 @@
 import std/[
-  httpclient, json, logging, os, osproc,
-  options, parsecfg, strformat, strutils, tables, uri
+  httpclient, json, logging, os,
+  osproc, options, parsecfg, strformat,
+  strutils, tables, uri
 ]
 
-var consoleLog = newConsoleLogger(useStdErr = true)
-addHandler(consoleLog)
+addHandler newConsoleLogger(useStdErr = true)
 
 type
   NimbleMetadata = object
@@ -94,7 +94,7 @@ proc `<-`(f: var Fod, p: PrefetchData) =
   f.path = p.path
   f.sha256 = p.sha256
   f.url = p.url
-  if p.fetchSubmodules.isSome():
+  if p.fetchSubmodules.isSome:
     f.fetchSubmodules = p.fetchSubmodules
   if p.leaveDotGit.isSome:
     f.leaveDotGit = p.leaveDotGit
