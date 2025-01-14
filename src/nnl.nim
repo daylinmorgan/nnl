@@ -12,7 +12,8 @@ type
 
   NnlContext* = object
     lockFile*: string
-    forceGit*: bool
+    prefetchGit*: seq[string]
+    prefetchGitAll*: bool
     output: string
 
   Checksums = object
@@ -164,19 +165,22 @@ proc nixPrefetchGit(url: string, rev: string): PrefetchData =
 
 
 proc fetch(c: NnlContext, f: var Fod) =
-  var uri = parseUri(f.url)
-  uri.scheme.removePrefix("git+")
-  if uri.query != "":
-    if uri.query.startsWith("subdir="):
-      f.subDir = uri.query[7 .. ^1]
-    uri.query = ""
-  let cloneUrl = $uri
-  let archiveUrl = $getArchiveUri(f.url, f.rev)
-  let prefetchData =
-    if not c.forceGit and testUri(uri) in {Http200, Http302}:
-      nixPrefetchUrl archiveUrl
-    else:
-      nixPrefetchGit cloneUrl, f.rev
+  var
+    prefetchData: PrefetchData
+    uri = parseUri(f.url)
+  if c.prefetchGitAll or (f.packages[0] in c.prefetchGit):
+    uri.scheme.removePrefix("git+")
+    if uri.query != "":
+      if uri.query.startsWith("subdir="):
+        f.subDir = uri.query[7 .. ^1]
+      uri.query = ""
+    let cloneUrl = $uri
+    prefetchData = nixPrefetchGit(cloneUrl, f.rev)
+  elif testUri(uri) in {Http200, Http302}:
+    let archiveUrl = $getArchiveUri(f.url, f.rev)
+    prefetchData = nixPrefetchUrl(archiveUrl)
+  else:
+    errLogQuit "archive url: " & $uri & " is unreachable"
   f <- prefetchData
   f <- getNimbleMetadata(f.path)
 
@@ -187,9 +191,9 @@ proc genFod(c: NnlContext, package: string, d: Dependency): Fod =
   fetch c, result
 
 proc generateLockFile*(c: NnlContext): JsonNode =
-  info "parsing: ", c.lockFile
   if not fileExists c.lockFile:
     errLogQuit c.lockFile, "does not exist"
+  info "parsing: ", c.lockFile
   var fods: seq[Fod]
   let dependencies = parseDepsFromLockFile c.lockFile
   for name, dep in dependencies:
@@ -225,9 +229,10 @@ usage:
   nnl <path/to/nimble.lock> [opts]
 
 options:
-  -h, --help   show this help
-  -o, --output path/to/lock.json (default stdout)
-  --force-git  force use of nix-prefetch-git
+  -h, --help         show this help
+  -o, --output       path/to/lock.json (default stdout)
+  --prefetch-git     use nix-prefetch-git dependencies, separated by commas
+  --prefetch-git-all use nix-prefetch-git for all dependencies
 """
   var c = NnlContext()
   var posArgs: seq[string]
@@ -241,10 +246,15 @@ options:
       case key
       of "h", "help":
         echo usage; quit 0
-      of "force-git":
-        c.forceGit = true
+      of "prefetch-git":
+        let pkgs = val.split(",")
+        c.prefetchGit = pkgs
+      of "prefetch-git-all":
+        c.prefetchGitAll = true
       of "o", "output":
         c.output = val
+      else:
+        errLogQuit "unexpected flag: " & key
     of cmdEnd: discard
 
   case posArgs.len
