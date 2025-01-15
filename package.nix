@@ -8,7 +8,7 @@
 }:
 buildNimPackage (final: {
   pname = "nnl";
-  version = "2024.1003";
+  version = "2025.1004";
 
   src = lib.cleanSource ./.;
   buildInputs = [openssl];
