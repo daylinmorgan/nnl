@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "packages": {
+    "hwylterm": {
+      "version": "0.1.0",
+      "vcsRevision": "1324ba54151eeb6c2a28d8236854ccfb9885b530",
+      "url": "https://github.com/daylinmorgan/hwylterm",
+      "downloadMethod": "git",
+      "dependencies": [],
+      "checksums": {
+        "sha1": "b5c3cc2e8ed4ce5514750d1216d0816cd4ef0dc7"
+      }
+    }
+  },
+  "tasks": {}
+}

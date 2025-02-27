@@ -4,3 +4,6 @@ tnnl*
 nnl*
 !tnnl.nim
 !nnl.nim
+nimble.develop
+nimble.paths
+nimbledeps
