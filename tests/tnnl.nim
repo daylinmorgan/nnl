@@ -16,10 +16,10 @@ suite "integration":
     let lockFileResult = parseFile(nixLockFilePath)
     check lockFileResult == generateLockFile c
   test "moe-git":
-    let c = NnlContext(lockFile: nimbleLockFilePath, prefetchGitAll: true)
+    let c = NnlContext(lockFile: nimbleLockFilePath, gitAll: true)
     let lockFileResult = parseFile(nixLockFileGitPath)
     check lockFileResult == generateLockFile c
   test "moe-git-jsony-parsetoml":
-    let c = NnlContext(lockFile: nimbleLockFilePath, prefetchGit: @["jsony", "parsetoml"])
+    let c = NnlContext(lockFile: nimbleLockFilePath, gitDeps: @["jsony", "parsetoml"])
     let lockFileResult = parseFile(nixLockFileGitJsonyParsetomlPath)
     check lockFileResult == generateLockFile c

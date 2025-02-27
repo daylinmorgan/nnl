@@ -1,7 +1,7 @@
 import std/[
   httpclient, json, logging, os, osproc,
   options, parsecfg, strformat, sets, strutils,
-  tables, uri, sequtils,
+  tables, uri, sequtils, sugar
 ]
 import hwylterm, hwylterm/logging
 
@@ -22,9 +22,10 @@ type
 
   NnlContext* = object
     lockFile*: string
-    prefetchGit*: seq[string]
-    prefetchGitAll*: bool
+    gitDeps*: seq[string]
+    gitAll*: bool
     output: string
+    nimbleDir: string
 
   Checksums = object
     sha1: string
@@ -79,9 +80,13 @@ proc findNimbleFile(p: string): string =
   if candidates.len == 1:
     return candidates[0]
   elif candidates.len > 1:
-    error "found multiple nimble files: " & candidates.join(", ")
+    fatalQuit "found multiple nimble files: " & candidates.join(", ")
   else:
-    error "failed to find a nimble file"
+    fatalQuit "failed to find a nimble file"
+
+proc execCmdLog(cmd: string): tuple[output: string, exitCode: int] =
+  debug "running cmd: ", cmd
+  result = execCmdEx(cmd, options = {poUsePath})
 
 proc getNimbleMetadata(nimbleFilePath: string): NimbleMetadata =
   let nimbleFile = findNimbleFile(nimbleFilePath)
@@ -111,7 +116,6 @@ proc `<-`(f: var Fod, p: PrefetchData) =
 proc `<-`(f: var Fod, m: NimbleMetadata) =
   f.srcDir = m.srcDir
 
-import sugar
 
 proc parseDepsFromLockFile*(lockFile: string): OrderedTable[string, Dependency] =
   info "parsing nimble lock file: ", lockFile
@@ -150,12 +154,12 @@ proc nixPrefetchUrl(url: string): PrefetchData =
   debug "prefetching archive: ", url
   let cmd =
     fmt"{nixPrefetchUrlPath} {url} --type sha256 --print-path --unpack --name source"
-  let (output, code) = execCmdEx(cmd, options = {poUsePath})
+  let (output, code) = execCmdLog(cmd)
   let lines = output.strip().splitLines()
   if code != 0:
-    error "failed to prefetch: ", url
+    fatal "failed to prefetch: ", url
   if lines.len != 2:
-    error "expected 2 lines from nix-prefetch-url output, got ", lines.len
+    fatal "expected 2 lines from nix-prefetch-url output, got ", lines.len
   if code != 0 or lines.len != 2:
     dumpQuit output
 
@@ -167,9 +171,9 @@ proc nixPrefetchUrl(url: string): PrefetchData =
 proc nixPrefetchGit(url: string, rev: string): PrefetchData =
   debug "prefetching repo: ", url
   let cmd = fmt"{nixPrefetchGitPath} --url {url} --rev {rev} --fetch-submodules --quiet"
-  let (output, code) = execCmdEx(cmd, options = {poUsePath})
+  let (output, code) = execCmdLog(cmd)
   if code != 0:
-    error "failed to prefetch: ", url
+    fatal "failed to prefetch: ", url
     dumpQuit output
   result = parsePrefetchGit output
   result.`method` = "git"
@@ -179,7 +183,7 @@ proc fetch(c: NnlContext, f: var Fod) =
   var
     prefetchData: PrefetchData
     uri = parseUri(f.url)
-  if c.prefetchGitAll or (f.packages[0] in c.prefetchGit):
+  if c.gitAll or (f.packages[0] in c.gitDeps):
     uri.scheme.removePrefix("git+")
     if uri.query != "":
       if uri.query.startsWith("subdir="):
@@ -202,7 +206,7 @@ proc genFod(c: NnlContext, package: string, d: Dependency): Fod =
   fetch c, result
 
 proc checkGit(c: NnlContext, deps: OrderedTable[string, Dependency]) =
-  let missing = (c.prefetchGit.toHashSet() - deps.keys().toSeq().toHashSet())
+  let missing = (c.gitDeps.toHashSet() - deps.keys().toSeq().toHashSet())
   if missing.len > 0:
     fatalQuit "unknown dependencies: " & missing.toSeq().join(", ")
 
@@ -221,21 +225,20 @@ proc hasNimbleFile(dir: string): bool =
     if kind == pcFile and path.endsWith(".nimble"):
       return true
 
-proc parseDepsFromNimblePackage(path: string): OrderedTable[string, Dependency] = 
+proc parseDepsFromNimblePackage(path, nimbleDir: string): OrderedTable[string, Dependency] =
   # TODO: force it to regenerate?
   if fileExists(path / "nimble.lock"):
     info "using existing nimble.lock"
     return parseDepsFromLockFile(path / "nimble.lock")
 
   info "generating nimble.lock"
-  if not hasNimbleFile path:
-    fatalQuit "no .nimble file found, is this a nim package directory"
+  discard findNimbleFile(path)
 
-  # TODO: make user flag for tempDir?
   let dir = createTempDir("nnl-", "")
+  let nimbleDirPath = if nimbleDir != "": nimbleDir else: dir / "nimble"
   withDir path:
-    let cmd = fmt"nimble lock --nimbleDir:{dir}/nimble --lockFile:{dir}/nimble.lock --verbose --debug"
-    let (output, code) = execCmdEx(cmd, options = {poUsePath})
+    let cmd = fmt"nimble lock --nimbleDir:{nimbleDirPath} --lockFile:{dir}/nimble.lock --verbose --debug"
+    let (output, code) = execCmdLog(cmd)
     if code != 0:
       fatalQuit "nimble lock failed" & "\n" & output
 
@@ -250,7 +253,7 @@ proc generateLockFile*(c: NnlContext): JsonNode =
   if fileExists c.lockFile:
     deps = parseDepsFromLockFile(c.lockFile)
   elif dirExists c.lockFile:
-    deps = parseDepsFromNimblePackage(c.lockFile)
+    deps = parseDepsFromNimblePackage(c.lockFile, c.nimbleDir)
   else:
     fatalQuit c.lockFile, "path is not a directory or a file"
  
@@ -292,7 +295,7 @@ when isMainModule:
   import hwylterm/hwylcli
   hwylCli:
     name "nnl"
-    settings ShowHelp, InferShort
+    settings ShowHelp
     version version()
     help:
       header """
@@ -305,13 +308,18 @@ when isMainModule:
     positionals:
       path string
     flags:
-      output("stdout", string, "path/to/lock.json")
-      `git`(seq[string], "use nix-prefetch-git")
-      `git - all` "use nix-prefetch-git for all dependencies"
-      verbose "increase verbosity"
+      o|output("stdout", string, "path/to/lock.json")
+      g|`git`(seq[string], "use nix-prefetch-git")
+      `git-all` "use nix-prefetch-git for all dependencies"
+      `nimble-dir`(string, "path/to/nimble-dir")
+      v|verbose "increase verbosity"
     run:
       if verbose: logger.levelThreshold = lvlAll
       let c = NnlContext(
-        lockFile: path, output: output, prefetchGit: `git`, prefetchGitAll: `git - all`
+        lockFile: path,
+        output: output,
+        gitDeps: `git`,
+        gitAll: `git-all`,
+        nimbleDir: `nimble-dir`
       )
       nnl c
