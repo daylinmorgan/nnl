@@ -1,6 +1,6 @@
 # nnl: nim nix lock
 
-`nnl` is designed to generate a [`nimBuildPackage`](nimBuildPackageUrl) compatible `lock.json`.
+`nnl` is designed to generate a [`nimBuildPackage`][nimBuildPackageUrl] compatible `lock.json`.
 It offloads all version resolution to `nimble`.
 
 If your project has an existing `nimble.lock` it will convert this directly,
