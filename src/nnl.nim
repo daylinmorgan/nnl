@@ -1,8 +1,8 @@
-import std/[
-  httpclient, json, logging, os,
-  osproc, options, parsecfg, strformat,
-  strutils, tables, uri
-]
+import
+  std/[
+    httpclient, json, logging, os, osproc, options, parsecfg, strformat, sets, strutils,
+    tables, uri, sequtils,
+  ]
 
 addHandler newConsoleLogger(useStdErr = true)
 
@@ -23,7 +23,6 @@ type
     version, vcsRevision, url, downloadMethod: string
     dependencies: seq[string]
     checksums: Checksums
-
 
   Fod = object
     `method`, path, rev, sha256, srcDir, url, subDir: string
@@ -46,7 +45,6 @@ proc dumpQuit(args: varargs[string, `$`]) =
   stderr.writeLine args.join(" ")
   quit 1
 
-
 proc `%`*(o: Fod): JsonNode =
   ## Construct JsonNode from Fod.
   result = newJObject()
@@ -60,11 +58,12 @@ proc `%`*(o: Fod): JsonNode =
 proc findNimbleFile(p: string): string =
   var candidates: seq[string]
   for kind, path in walkDir(p):
-    case kind:
-      of pcFile, pcLinkToFile:
-        if path.endsWith(".nimble"):
-          candidates.add path
-      else: discard
+    case kind
+    of pcFile, pcLinkToFile:
+      if path.endsWith(".nimble"):
+        candidates.add path
+    else:
+      discard
   # nimble will probably prevent this,
   # but not sure about atlas or bespoke builds
   if candidates.len == 1:
@@ -136,7 +135,6 @@ proc testUri(uri: Uri): HttpCode =
     client.close()
   result = resp.code
 
-
 proc nixPrefetchUrl(url: string): PrefetchData =
   debug "prefetching archive: ", url
   let cmd =
@@ -157,8 +155,7 @@ proc nixPrefetchUrl(url: string): PrefetchData =
 
 proc nixPrefetchGit(url: string, rev: string): PrefetchData =
   debug "prefetching repo: ", url
-  let cmd =
-    fmt"nix-prefetch-git --url {url} --rev {rev} --fetch-submodules --quiet"
+  let cmd = fmt"nix-prefetch-git --url {url} --rev {rev} --fetch-submodules --quiet"
   let (output, code) = execCmdEx(cmd, options = {poUsePath})
   if code != 0:
     error "failed to prefetch: ", url
@@ -166,7 +163,6 @@ proc nixPrefetchGit(url: string, rev: string): PrefetchData =
   result = parsePrefetchGit output
   result.`method` = "git"
   result.url = url
-
 
 proc fetch(c: NnlContext, f: var Fod) =
   var
@@ -194,16 +190,23 @@ proc genFod(c: NnlContext, package: string, d: Dependency): Fod =
   result <- d
   fetch c, result
 
+proc checkGit(c: NnlContext, deps: OrderedTable[string, Dependency]) =
+  let missing = (c.prefetchGit.toHashSet() - deps.keys().toSeq().toHashSet())
+  if missing.len > 0:
+    errLogQuit "unknown dependencies: " & missing.toSeq().join(", ")
+
 proc generateLockFile*(c: NnlContext): JsonNode =
   if not fileExists c.lockFile:
     errLogQuit c.lockFile, "does not exist"
   info "parsing: ", c.lockFile
   var fods: seq[Fod]
   let dependencies = parseDepsFromLockFile c.lockFile
+  checkGit(c, dependencies)
+
   for name, dep in dependencies:
     if name.toLowerAscii() notin ["nim", "compiler"]:
       fods.add genFod(c, name, dep)
-  return ( %* {"depends": fods})
+  return (%*{"depends": fods})
 
 proc checkDeps() =
   if (findExe "nix-prefetch-url") == "":
@@ -214,59 +217,89 @@ proc checkDeps() =
 proc nnl(c: NnlContext) =
   checkDeps()
   let data = pretty(generateLockFile c)
-  if c.output != "":
-    writeFile(c.output, data & "\n")
-  else:
+  if c.output == "stdout":
     stdout.writeLine(data)
-
+  elif c.output != "":
+    writeFile(c.output, data & "\n")
 
 when isMainModule:
-  import std/parseopt
-  const usage = """
-nim nix lock
-------------
-nimble.lock -> lock.json
-generate a lock file for
-packaging nim modules with nix
+  import hwylterm/hwylcli
+  hwylCli:
+    name "nnl"
+    settings ShowHelp, InferShort
+    help:
+      header """
+      [cyan][yellow]n[/]im [yellow]n[/]ix [yellow]l[/]ock[/]
+      ------------
+      nimble.lock -> lock.json
+      generate a lock file for
+      packaging nim modules with nix
+      """
+    positionals:
+      path string
+    flags:
+      output("stdout", string, "path/to/lock.json")
+      `git`(seq[string], "use nix-prefetch-git")
+      `git - all` "use nix-prefetch-git for all dependencies"
+    run:
+      let c = NnlContext(
+        lockFile: path, output: output, prefetchGit: `git`, prefetchGitAll: `git - all`
+      )
+      nnl c
+      # NnlContext()
+  # NnlContext* = object
+  #   lockFile*: string
+  #   prefetchGit*: seq[string]
+  #   prefetchGitAll*: bool
+  #   output: string
+  #
 
-usage:
-  nnl <path/to/nimble.lock> [opts]
-
-options:
-  -h, --help         show this help
-  -o, --output       path/to/lock.json (default stdout)
-  --prefetch-git     use nix-prefetch-git dependencies, separated by commas
-  --prefetch-git-all use nix-prefetch-git for all dependencies
-"""
-  var c = NnlContext()
-  var posArgs: seq[string]
-  for kind, key, val in getopt(
-    shortNoVal = {'h'}, longNoVal = @["help", "force-git"]
-  ):
-    case kind
-    of cmdArgument:
-      posArgs.add key
-    of cmdShortOption, cmdLongOption:
-      case key
-      of "h", "help":
-        echo usage; quit 0
-      of "prefetch-git":
-        let pkgs = val.split(",")
-        c.prefetchGit = pkgs
-      of "prefetch-git-all":
-        c.prefetchGitAll = true
-      of "o", "output":
-        c.output = val
-      else:
-        errLogQuit "unexpected flag: " & key
-    of cmdEnd: discard
-
-  case posArgs.len
-  of 1:
-    c.lockFile = posArgs[0]
-  of 0:
-    errLogQuit "expected path to nimble.lock"
-  else:
-    errLogQuit "expected one positional argument, but got `" &
-      posArgs.join(" ") & "`"
-  nnl c
+#   import std/parseopt
+#   const usage = """
+# nim nix lock
+# ------------
+# nimble.lock -> lock.json
+# generate a lock file for
+# packaging nim modules with nix
+#
+# usage:
+#   nnl <path/to/nimble.lock> [opts]
+#
+# options:
+#   -h, --help         show this help
+#   -o, --output       path/to/lock.json (default stdout)
+#   --prefetch-git     use nix-prefetch-git dependencies, separated by commas
+#   --prefetch-git-all use nix-prefetch-git for all dependencies
+# """
+#   var c = NnlContext()
+#   var posArgs: seq[string]
+#   for kind, key, val in getopt(
+#     shortNoVal = {'h'}, longNoVal = @["help", "force-git"]
+#   ):
+#     case kind
+#     of cmdArgument:
+#       posArgs.add key
+#     of cmdShortOption, cmdLongOption:
+#       case key
+#       of "h", "help":
+#         echo usage; quit 0
+#       of "prefetch-git":
+#         let pkgs = val.split(",")
+#         c.prefetchGit = pkgs
+#       of "prefetch-git-all":
+#         c.prefetchGitAll = true
+#       of "o", "output":
+#         c.output = val
+#       else:
+#         errLogQuit "unexpected flag: " & key
+#     of cmdEnd: discard
+#
+#   case posArgs.len
+#   of 1:
+#     c.lockFile = posArgs[0]
+#   of 0:
+#     errLogQuit "expected path to nimble.lock"
+#   else:
+#     errLogQuit "expected one positional argument, but got `" &
+#       posArgs.join(" ") & "`"
+#   nnl c
