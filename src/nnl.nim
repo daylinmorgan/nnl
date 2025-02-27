@@ -1,10 +1,15 @@
-import
-  std/[
-    httpclient, json, logging, os, osproc, options, parsecfg, strformat, sets, strutils,
-    tables, uri, sequtils,
-  ]
+import std/[
+  httpclient, json, logging, os, osproc,
+  options, parsecfg, strformat, sets, strutils,
+  tables, uri, sequtils,
+]
+import hwylterm, hwylterm/logging
 
-addHandler newConsoleLogger(useStdErr = true)
+let logger = newHwylConsoleLogger(
+  fmtPrefix = $bb"[b magenta]nnl[/]",
+  levelThreshold = lvlInfo
+)
+addHandler logger
 
 type
   NimbleMetadata = object
@@ -37,8 +42,8 @@ type
     url, rev, date, path, sha256: string
     fetchLFS, fetchSubmodules, deepClone, leaveDotGit: bool
 
-proc errLogQuit(args: varargs[string, `$`]) =
-  error args.join(" ")
+proc fatalQuit(args: varargs[string, `$`]) =
+  fatal args.join(" ")
   quit 1
 
 proc dumpQuit(args: varargs[string, `$`]) =
@@ -180,7 +185,7 @@ proc fetch(c: NnlContext, f: var Fod) =
     let archiveUrl = $getArchiveUri(f.url, f.rev)
     prefetchData = nixPrefetchUrl(archiveUrl)
   else:
-    errLogQuit "archive url: " & $uri & " is unreachable"
+    fatalQuit "archive url: " & $uri & " is unreachable"
   f <- prefetchData
   f <- getNimbleMetadata(f.path)
 
@@ -193,11 +198,11 @@ proc genFod(c: NnlContext, package: string, d: Dependency): Fod =
 proc checkGit(c: NnlContext, deps: OrderedTable[string, Dependency]) =
   let missing = (c.prefetchGit.toHashSet() - deps.keys().toSeq().toHashSet())
   if missing.len > 0:
-    errLogQuit "unknown dependencies: " & missing.toSeq().join(", ")
+    fatalQuit "unknown dependencies: " & missing.toSeq().join(", ")
 
 proc generateLockFile*(c: NnlContext): JsonNode =
   if not fileExists c.lockFile:
-    errLogQuit c.lockFile, "does not exist"
+    fatalQuit c.lockFile, "does not exist"
   info "parsing: ", c.lockFile
   var fods: seq[Fod]
   let dependencies = parseDepsFromLockFile c.lockFile
@@ -210,9 +215,9 @@ proc generateLockFile*(c: NnlContext): JsonNode =
 
 proc checkDeps() =
   if (findExe "nix-prefetch-url") == "":
-    errLogQuit "nix-prefetch-url not found"
+    fatalQuit "nix-prefetch-url not found"
   if (findExe "nix-prefetch-git") == "":
-    errLogQuit "nix-prefetch-git not found"
+    fatalQuit "nix-prefetch-git not found"
 
 proc nnl(c: NnlContext) =
   checkDeps()
@@ -222,14 +227,25 @@ proc nnl(c: NnlContext) =
   elif c.output != "":
     writeFile(c.output, data & "\n")
 
+proc version(): string {.compileTime.} =
+  ## overengineered version embedding
+  const nnlVersion {.strdefine.} = ""
+  result = nnlVersion
+  when nnlVersion == "":
+    const (gitVersion, code) = gorgeEx("git describe --always --tags")
+    when code != 0:
+      {.fatal: "failed to get nnl version: " & gitVersion & "\n use -d:nnlVersion:v* to override auto detection"}
+    result = gitVersion
+
 when isMainModule:
   import hwylterm/hwylcli
   hwylCli:
     name "nnl"
     settings ShowHelp, InferShort
+    version version()
     help:
       header """
-      [cyan][yellow]n[/]im [yellow]n[/]ix [yellow]l[/]ock[/]
+      [b cyan][yellow]n[/]im [yellow]n[/]ix [yellow]l[/]ock[/]
       ------------
       nimble.lock -> lock.json
       generate a lock file for
@@ -241,65 +257,10 @@ when isMainModule:
       output("stdout", string, "path/to/lock.json")
       `git`(seq[string], "use nix-prefetch-git")
       `git - all` "use nix-prefetch-git for all dependencies"
+      verbose "increase verbosity"
     run:
+      if verbose: logger.levelThreshold = lvlAll
       let c = NnlContext(
         lockFile: path, output: output, prefetchGit: `git`, prefetchGitAll: `git - all`
       )
       nnl c
-      # NnlContext()
-  # NnlContext* = object
-  #   lockFile*: string
-  #   prefetchGit*: seq[string]
-  #   prefetchGitAll*: bool
-  #   output: string
-  #
-
-#   import std/parseopt
-#   const usage = """
-# nim nix lock
-# ------------
-# nimble.lock -> lock.json
-# generate a lock file for
-# packaging nim modules with nix
-#
-# usage:
-#   nnl <path/to/nimble.lock> [opts]
-#
-# options:
-#   -h, --help         show this help
-#   -o, --output       path/to/lock.json (default stdout)
-#   --prefetch-git     use nix-prefetch-git dependencies, separated by commas
-#   --prefetch-git-all use nix-prefetch-git for all dependencies
-# """
-#   var c = NnlContext()
-#   var posArgs: seq[string]
-#   for kind, key, val in getopt(
-#     shortNoVal = {'h'}, longNoVal = @["help", "force-git"]
-#   ):
-#     case kind
-#     of cmdArgument:
-#       posArgs.add key
-#     of cmdShortOption, cmdLongOption:
-#       case key
-#       of "h", "help":
-#         echo usage; quit 0
-#       of "prefetch-git":
-#         let pkgs = val.split(",")
-#         c.prefetchGit = pkgs
-#       of "prefetch-git-all":
-#         c.prefetchGitAll = true
-#       of "o", "output":
-#         c.output = val
-#       else:
-#         errLogQuit "unexpected flag: " & key
-#     of cmdEnd: discard
-#
-#   case posArgs.len
-#   of 1:
-#     c.lockFile = posArgs[0]
-#   of 0:
-#     errLogQuit "expected path to nimble.lock"
-#   else:
-#     errLogQuit "expected one positional argument, but got `" &
-#       posArgs.join(" ") & "`"
-#   nnl c
