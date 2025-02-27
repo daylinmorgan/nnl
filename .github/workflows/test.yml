@@ -20,6 +20,8 @@ jobs:
     - name: Install Nix
       uses: DeterminateSystems/nix-installer-action@main
     - uses: DeterminateSystems/magic-nix-cache-action@v2
+    - name: Setup dependencies
+      run: nix develop --command nimble setup -l
     - name: Run Tests
       run: nix develop --command nim c -r tests/tnnl.nim
 
