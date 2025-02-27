@@ -1,9 +1,12 @@
 {
   lib,
   buildNimPackage,
+
   nix,
+  nimble,
   nix-prefetch-git,
   openssl,
+
   makeWrapper,
 }:
 buildNimPackage (final: {
@@ -14,6 +17,13 @@ buildNimPackage (final: {
   buildInputs = [ openssl ];
   nativeBuildInputs = [ makeWrapper ];
   lockFile = ./lock.json;
+
+  nimFlags = [
+    "-d:nnlVersion:${final.version}"
+    "-d:nimblePath:${nimble}/bin/nimble"
+    "-d:nixPrefetchGitPath:${nix-prefetch-git}/bin/nix-prefetch-git"
+    "-d:nixPrefetchUrlPath:${nix}/bin/nix-prefetch-url"
+  ];
 
   doCheck = false;
   postFixup = ''

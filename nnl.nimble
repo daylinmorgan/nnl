@@ -11,4 +11,4 @@ bin           = @["nnl"]
 # Dependencies
 
 requires "nim >= 2.0.0"
-requires "https://github.com/daylinmorgan/hwylterm#a0ecff96"
+requires "https://github.com/daylinmorgan/hwylterm#1324ba5"

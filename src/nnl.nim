@@ -11,6 +11,11 @@ let logger = newHwylConsoleLogger(
 )
 addHandler logger
 
+const
+  nimblePath {.strdefine.} = "nimble"
+  nixPrefetchGitPath {.strdefine.} = "nix-prefetch-git"
+  nixPrefetchUrlPath {.strdefine.} = "nix-prefetch-url"
+
 type
   NimbleMetadata = object
     srcDir: string
@@ -109,6 +114,7 @@ proc `<-`(f: var Fod, m: NimbleMetadata) =
 import sugar
 
 proc parseDepsFromLockFile*(lockFile: string): OrderedTable[string, Dependency] =
+  info "parsing nimble lock file: ", lockFile
   let lockData = parseFile(lockFile)
   if "packages" in lockData:
     result = lockData["packages"].to(typeof(result))
@@ -143,7 +149,7 @@ proc testUri(uri: Uri): HttpCode =
 proc nixPrefetchUrl(url: string): PrefetchData =
   debug "prefetching archive: ", url
   let cmd =
-    fmt"nix-prefetch-url {url} --type sha256 --print-path --unpack --name source"
+    fmt"{nixPrefetchUrlPath} {url} --type sha256 --print-path --unpack --name source"
   let (output, code) = execCmdEx(cmd, options = {poUsePath})
   let lines = output.strip().splitLines()
   if code != 0:
@@ -160,7 +166,7 @@ proc nixPrefetchUrl(url: string): PrefetchData =
 
 proc nixPrefetchGit(url: string, rev: string): PrefetchData =
   debug "prefetching repo: ", url
-  let cmd = fmt"nix-prefetch-git --url {url} --rev {rev} --fetch-submodules --quiet"
+  let cmd = fmt"{nixPrefetchGitPath} --url {url} --rev {rev} --fetch-submodules --quiet"
   let (output, code) = execCmdEx(cmd, options = {poUsePath})
   if code != 0:
     error "failed to prefetch: ", url
@@ -200,23 +206,68 @@ proc checkGit(c: NnlContext, deps: OrderedTable[string, Dependency]) =
   if missing.len > 0:
     fatalQuit "unknown dependencies: " & missing.toSeq().join(", ")
 
-proc generateLockFile*(c: NnlContext): JsonNode =
-  if not fileExists c.lockFile:
-    fatalQuit c.lockFile, "does not exist"
-  info "parsing: ", c.lockFile
-  var fods: seq[Fod]
-  let dependencies = parseDepsFromLockFile c.lockFile
-  checkGit(c, dependencies)
+import std/tempfiles
 
-  for name, dep in dependencies:
+
+template withDir(p: string, body: untyped) =
+  let old = getCurrentDir()
+  # TODO: ensure this is a directory?
+  setCurrentDir p
+  body
+  setCurrentDir old
+
+proc hasNimbleFile(dir: string): bool =
+  for kind, path in walkDir(dir):
+    if kind == pcFile and path.endsWith(".nimble"):
+      return true
+
+proc parseDepsFromNimblePackage(path: string): OrderedTable[string, Dependency] = 
+  # TODO: force it to regenerate?
+  if fileExists(path / "nimble.lock"):
+    info "using existing nimble.lock"
+    return parseDepsFromLockFile(path / "nimble.lock")
+
+  info "generating nimble.lock"
+  if not hasNimbleFile path:
+    fatalQuit "no .nimble file found, is this a nim package directory"
+
+  # TODO: make user flag for tempDir?
+  let dir = createTempDir("nnl-", "")
+  withDir path:
+    let cmd = fmt"nimble lock --nimbleDir:{dir}/nimble --lockFile:{dir}/nimble.lock --verbose --debug"
+    let (output, code) = execCmdEx(cmd, options = {poUsePath})
+    if code != 0:
+      fatalQuit "nimble lock failed" & "\n" & output
+
+    result = parseDepsFromLockFile(dir/"nimble.lock")
+  removeDir dir
+
+proc generateLockFile*(c: NnlContext): JsonNode =
+  var
+    fods: seq[Fod]
+    deps: OrderedTable[string, Dependency]
+
+  if fileExists c.lockFile:
+    deps = parseDepsFromLockFile(c.lockFile)
+  elif dirExists c.lockFile:
+    deps = parseDepsFromNimblePackage(c.lockFile)
+  else:
+    fatalQuit c.lockFile, "path is not a directory or a file"
+ 
+  checkGit(c, deps)
+
+  for name, dep in deps:
     if name.toLowerAscii() notin ["nim", "compiler"]:
       fods.add genFod(c, name, dep)
   return (%*{"depends": fods})
 
 proc checkDeps() =
-  if (findExe "nix-prefetch-url") == "":
+  debug "nimble: " & nimblePath
+  debug "nix-prefetch-url: " & nixPrefetchUrlPath
+  debug "nix-prefetch-git: " & nixPrefetchGitPath
+  if findExe(nixPrefetchUrlPath) == "":
     fatalQuit "nix-prefetch-url not found"
-  if (findExe "nix-prefetch-git") == "":
+  if findExe(nixPrefetchGitPath) == "":
     fatalQuit "nix-prefetch-git not found"
 
 proc nnl(c: NnlContext) =
@@ -234,7 +285,7 @@ proc version(): string {.compileTime.} =
   when nnlVersion == "":
     const (gitVersion, code) = gorgeEx("git describe --always --tags")
     when code != 0:
-      {.fatal: "failed to get nnl version: " & gitVersion & "\n use -d:nnlVersion:v* to override auto detection"}
+      {.fatal: "failed to get nnl version: " & gitVersion & "\nuse -d:nnlVersion:v* to override auto detection"}
     result = gitVersion
 
 when isMainModule:
