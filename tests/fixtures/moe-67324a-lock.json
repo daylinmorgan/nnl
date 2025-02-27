@@ -2,14 +2,14 @@
   "depends": [
     {
       "method": "fetchzip",
-      "path": "/nix/store/y6w1gzbf6i691z35rbn6kzrmf1n5bmdc-source",
-      "rev": "cb8b7bfdcdc2272aadf92153c668acd3c901bd6b",
-      "sha256": "1ggp5rvs217dv2n0p5ddm5h17pv2mc7724n8cd0b393kmsjiykhz",
+      "path": "/nix/store/bzcq8q439rdsqhhihikzv3rsx4l4ybdm-source",
+      "rev": "ea811bec7fa50f5abd3088ba94cda74285e93f18",
+      "sha256": "1720iqsxjhqmhw1zhhs7d2ncdz25r8fqadls1p1iry1wfikjlnba",
       "srcDir": "src",
-      "url": "https://github.com/nitely/nim-regex/archive/cb8b7bfdcdc2272aadf92153c668acd3c901bd6b.tar.gz",
+      "url": "https://github.com/treeform/jsony/archive/ea811bec7fa50f5abd3088ba94cda74285e93f18.tar.gz",
       "subDir": "",
       "packages": [
-        "regex"
+        "jsony"
       ]
     },
     {
@@ -26,26 +26,26 @@
     },
     {
       "method": "fetchzip",
-      "path": "/nix/store/wpilzdf8vdwp7w129yrl821p9qvl3ky3-source",
-      "rev": "b055310c08db8f879057b4fec15c8301ee93bb2a",
-      "sha256": "0w77h75vrgp6jiq4dd9i2m4za2cf8qhjkz2wlxiz27yn2isjrndy",
+      "path": "/nix/store/nrgl7ks2x3svv6pkdxzr97d6jbd3zhlr-source",
+      "rev": "6e5e16179fa2db60f2f37d8b1af4128aaa9c8aaf",
+      "sha256": "0lsgzbjlgd0h9859yn864y9h9h1v4f5jjk81yvfnlkc9zbwb5kfa",
       "srcDir": "src",
-      "url": "https://github.com/nitely/nim-unicodedb/archive/b055310c08db8f879057b4fec15c8301ee93bb2a.tar.gz",
+      "url": "https://github.com/NimParsers/parsetoml/archive/6e5e16179fa2db60f2f37d8b1af4128aaa9c8aaf.tar.gz",
       "subDir": "",
       "packages": [
-        "unicodedb"
+        "parsetoml"
       ]
     },
     {
       "method": "fetchzip",
-      "path": "/nix/store/bzcq8q439rdsqhhihikzv3rsx4l4ybdm-source",
-      "rev": "ea811bec7fa50f5abd3088ba94cda74285e93f18",
-      "sha256": "1720iqsxjhqmhw1zhhs7d2ncdz25r8fqadls1p1iry1wfikjlnba",
+      "path": "/nix/store/y6w1gzbf6i691z35rbn6kzrmf1n5bmdc-source",
+      "rev": "cb8b7bfdcdc2272aadf92153c668acd3c901bd6b",
+      "sha256": "1ggp5rvs217dv2n0p5ddm5h17pv2mc7724n8cd0b393kmsjiykhz",
       "srcDir": "src",
-      "url": "https://github.com/treeform/jsony/archive/ea811bec7fa50f5abd3088ba94cda74285e93f18.tar.gz",
+      "url": "https://github.com/nitely/nim-regex/archive/cb8b7bfdcdc2272aadf92153c668acd3c901bd6b.tar.gz",
       "subDir": "",
       "packages": [
-        "jsony"
+        "regex"
       ]
     },
     {
@@ -62,14 +62,14 @@
     },
     {
       "method": "fetchzip",
-      "path": "/nix/store/nrgl7ks2x3svv6pkdxzr97d6jbd3zhlr-source",
-      "rev": "6e5e16179fa2db60f2f37d8b1af4128aaa9c8aaf",
-      "sha256": "0lsgzbjlgd0h9859yn864y9h9h1v4f5jjk81yvfnlkc9zbwb5kfa",
+      "path": "/nix/store/wpilzdf8vdwp7w129yrl821p9qvl3ky3-source",
+      "rev": "b055310c08db8f879057b4fec15c8301ee93bb2a",
+      "sha256": "0w77h75vrgp6jiq4dd9i2m4za2cf8qhjkz2wlxiz27yn2isjrndy",
       "srcDir": "src",
-      "url": "https://github.com/NimParsers/parsetoml/archive/6e5e16179fa2db60f2f37d8b1af4128aaa9c8aaf.tar.gz",
+      "url": "https://github.com/nitely/nim-unicodedb/archive/b055310c08db8f879057b4fec15c8301ee93bb2a.tar.gz",
       "subDir": "",
       "packages": [
-        "parsetoml"
+        "unicodedb"
       ]
     }
   ]

@@ -24,7 +24,6 @@ type
     dependencies: seq[string]
     checksums: Checksums
 
-  Dependencies = Table[string, Dependency]
 
   Fod = object
     `method`, path, rev, sha256, srcDir, url, subDir: string
@@ -103,10 +102,15 @@ proc `<-`(f: var Fod, p: PrefetchData) =
 proc `<-`(f: var Fod, m: NimbleMetadata) =
   f.srcDir = m.srcDir
 
-proc parseDepsFromLockFile*(lockFile: string): Dependencies =
+import sugar
+
+proc parseDepsFromLockFile*(lockFile: string): OrderedTable[string, Dependency] =
   let lockData = parseFile(lockFile)
   if "packages" in lockData:
-    result = lockData["packages"].to(Dependencies)
+    result = lockData["packages"].to(typeof(result))
+    # unclear how stable the nimble.lock ordering is
+    # https://github.com/nim-lang/nimble/issues/1184
+    result.sort((x, y) => cmp(x[0], y[0]))
 
 proc parsePrefetchGit(prefetchJsonStr: string): PrefetchData =
   var prefetchData: PrefetchDataGit
