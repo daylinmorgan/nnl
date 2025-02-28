@@ -220,11 +220,6 @@ template withDir(p: string, body: untyped) =
   body
   setCurrentDir old
 
-proc hasNimbleFile(dir: string): bool =
-  for kind, path in walkDir(dir):
-    if kind == pcFile and path.endsWith(".nimble"):
-      return true
-
 proc parseDepsFromNimblePackage(path, nimbleDir: string): OrderedTable[string, Dependency] =
   # TODO: force it to regenerate?
   if fileExists(path / "nimble.lock"):
