@@ -6,16 +6,20 @@
   nimble,
   nix-prefetch-git,
   openssl,
-
-  makeWrapper,
 }:
 buildNimPackage (final: {
   pname = "nnl";
   version = "2025.1004";
 
   src = lib.cleanSource ./.;
-  buildInputs = [ openssl ];
-  nativeBuildInputs = [ makeWrapper ];
+
+  buildInputs = [
+    openssl
+    nix
+    nimble
+    nix-prefetch-git
+  ];
+
   lockFile = ./lock.json;
 
   nimFlags = [
@@ -26,15 +30,6 @@ buildNimPackage (final: {
   ];
 
   doCheck = false;
-  postFixup = ''
-    wrapProgram $out/bin/nnl \
-      --suffix PATH : ${
-        lib.makeBinPath [
-          nix
-          nix-prefetch-git
-        ]
-      }
-  '';
 
   meta = with lib; {
     description = "Generate Nix specific lock files for Nim packages from nimble.lock";
