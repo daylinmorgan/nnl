@@ -18,5 +18,6 @@ nix run "github:daylinmorgan/nnl" . -o lock.json --git hwylterm
 ## alternatives
 
 - [nim_lk](https://git.sr.ht/~ehmry/nim_lk)
+- [nim2nix](https://github.com/daylinmorgan/nim2nix)
 
 [nimBuildPackageUrl]: https://github.com/NixOS/nixpkgs/blob/master/doc/languages-frameworks/nim.section.md#buildnimpackage-buildnimpackage
