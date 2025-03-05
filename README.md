@@ -9,10 +9,10 @@ otherwise it will first generate a `nimble.lock` behind the scenes to be consume
 ## usage
 
 ```sh
-nix run "github:daylinmorgan/nnl" nimble.lock > lock.json
-nix run "github:daylinmorgan/nnl" nimble.lock --output lock.json
-nix run "github:daylinmorgan/nnl" nimble.lock -o:lock.json
-nix run "github:daylinmorgan/nnl" . -o lock.json --git hwylterm
+nix run "github:daylinmorgan/nnl" -- nimble.lock > lock.json
+nix run "github:daylinmorgan/nnl" -- nimble.lock --output lock.json
+nix run "github:daylinmorgan/nnl" -- nimble.lock -o:lock.json
+nix run "github:daylinmorgan/nnl" -- . -o lock.json --git hwylterm
 ```
 
 ## alternatives
