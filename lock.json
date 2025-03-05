@@ -2,11 +2,11 @@
   "depends": [
     {
       "method": "fetchzip",
-      "path": "/nix/store/sfif0mm4m633a5qx45gn8nz11pjzcpg7-source",
-      "rev": "1324ba54151eeb6c2a28d8236854ccfb9885b530",
-      "sha256": "1m5shna5251a7j0sqk9gd7hfxbfy6nz5ggddbiccxvszyd6xv2ph",
+      "path": "/nix/store/9i5lbkdszdbilgms82m60nzcr5fcv8pk-source",
+      "rev": "05087cb4f16fe95891860552210b64371835f40d",
+      "sha256": "0ppmzv1862icnzjl2icpqrnf4yqdd9b1g928phssrdahmcb6ap87",
       "srcDir": "src",
-      "url": "https://github.com/daylinmorgan/hwylterm/archive/1324ba54151eeb6c2a28d8236854ccfb9885b530.tar.gz",
+      "url": "https://github.com/daylinmorgan/hwylterm/archive/05087cb4f16fe95891860552210b64371835f40d.tar.gz",
       "subDir": "",
       "packages": [
         "hwylterm"

@@ -304,7 +304,7 @@ when isMainModule:
       path string
     flags:
       o|output("stdout", string, "path/to/lock.json")
-      g|`git`(seq[string], "use nix-prefetch-git")
+      g|git(seq[string], "use nix-prefetch-git")
       `git-all` "use nix-prefetch-git for all dependencies"
       `nimble-dir`(string, "path/to/nimble-dir")
       v|verbose "increase verbosity"
@@ -313,7 +313,7 @@ when isMainModule:
       let c = NnlContext(
         lockFile: path,
         output: output,
-        gitDeps: `git`,
+        gitDeps: git,
         gitAll: `git-all`,
         nimbleDir: `nimble-dir`
       )
