@@ -2,7 +2,6 @@
   lib,
   buildNimPackage,
 
-  nix,
   nimble,
   nix-prefetch-git,
   openssl,
@@ -15,7 +14,6 @@ buildNimPackage (final: {
 
   buildInputs = [
     openssl
-    nix
     nimble
     nix-prefetch-git
   ];
@@ -26,7 +24,6 @@ buildNimPackage (final: {
     "-d:nnlVersion:${final.version}"
     "-d:nimblePath:${nimble}/bin/nimble"
     "-d:nixPrefetchGitPath:${nix-prefetch-git}/bin/nix-prefetch-git"
-    "-d:nixPrefetchUrlPath:${nix}/bin/nix-prefetch-url"
   ];
 
   doCheck = false;

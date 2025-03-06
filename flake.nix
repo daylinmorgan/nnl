@@ -49,7 +49,6 @@
             nim
             nimble
             openssl
-            nix
             nix-prefetch-git
           ];
         };
