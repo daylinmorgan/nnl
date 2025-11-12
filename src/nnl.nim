@@ -48,6 +48,22 @@ type
     url, rev, date, path, sha256: string
     fetchLFS, fetchSubmodules, deepClone, leaveDotGit: bool
 
+proc newNnlContext(
+    lockFile: string,
+    gitDeps: seq[string],
+    gitAll: bool,
+    output: string,
+    nimbleDir: string,
+    verbose: bool
+): NnlContext =
+  if verbose: logger.levelThreshold = lvlAll
+  result.lockFile = lockFIle
+  result.gitDeps = gitDeps
+  result.gitAll = gitAll
+  result.output = output
+  result.nimbleDir = nimbleDir
+
+
 proc fatalQuit(args: varargs[string, `$`]) =
   fatal args.join(" ")
   quit 1
@@ -309,12 +325,12 @@ when isMainModule:
       `nimble-dir`(string, "path/to/nimble-dir")
       v|verbose "increase verbosity"
     run:
-      if verbose: logger.levelThreshold = lvlAll
-      let c = NnlContext(
-        lockFile: path,
-        output: output,
-        gitDeps: git,
-        gitAll: `git-all`,
-        nimbleDir: `nimble-dir`
+      let c = newNnlContext(
+        lockFile = path,
+        output = output,
+        gitDeps = git,
+        gitAll = `git-all`,
+        nimbleDir = `nimble-dir`,
+        verbose = verbose
       )
       nnl c
