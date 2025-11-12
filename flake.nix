@@ -19,40 +19,42 @@
         "aarch64-linux"
         "aarch64-darwin"
       ];
-      forAllSystems =
-        f:
-        genAttrs systems (
-          system:
-          f (
-            import nixpkgs {
-              localSystem.system = system;
-              overlays = [ self.overlays.default ];
-            }
-          )
+      forSystem =
+        f: system:
+        f system (
+          import nixpkgs {
+            inherit system;
+            overlays = [ self.overlays.default ];
+          }
         );
+      forAllSystems = f: genAttrs systems (forSystem f);
     in
     {
       overlays = {
-        default = final: prev:  {
+        default = final: prev: {
           nnl = prev.callPackage ./package.nix { };
         };
       };
 
-      packages = forAllSystems (pkgs: {
-        nnl = pkgs.nnl;
-        default = self.packages.${pkgs.system}.nnl;
-      });
+      packages = forAllSystems (
+        system: pkgs: {
+          nnl = pkgs.nnl;
+          default = self.packages.${system}.nnl;
+        }
+      );
 
-      devShells = forAllSystems (pkgs: {
-        default = pkgs.mkShell {
-          packages = with pkgs; [
-            nim
-            nimble
-            openssl
-            nix-prefetch-git
-          ];
-        };
-      });
-      formatter = forAllSystems (pkgs: pkgs.nixfmt-rfc-style);
+      devShells = forAllSystems (
+        _: pkgs: {
+          default = pkgs.mkShell {
+            packages = with pkgs; [
+              nim
+              nimble
+              openssl
+              nix-prefetch-git
+            ];
+          };
+        }
+      );
+      formatter = forAllSystems (_: pkgs: pkgs.nixfmt-rfc-style);
     };
 }
