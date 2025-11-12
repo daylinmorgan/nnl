@@ -86,7 +86,7 @@ proc findNimbleFile(p: string): string =
 
 proc execCmdLog(cmd: string): tuple[output: string, exitCode: int] =
   debug "running cmd: ", cmd
-  result = execCmdEx(cmd, options = {poUsePath})
+  result = execCmdEx(cmd, options = {poUsePath, poStdErrToStdOut})
 
 proc getNimbleMetadata(nimbleFilePath: string): NimbleMetadata =
   let nimbleFile = findNimbleFile(nimbleFilePath)
@@ -157,11 +157,11 @@ proc nixPrefetchUrl(url: string): PrefetchData =
   let (output, code) = execCmdLog(cmd)
   let lines = output.strip().splitLines()
   if code != 0:
-    fatal "failed to prefetch: ", url
-  if lines.len != 2:
-    fatal "expected 2 lines from nix-prefetch-url output, got ", lines.len
-  if code != 0 or lines.len != 2:
-    dumpQuit output
+    fatal "failed to prefetch: ", url, "\noutput: ", output
+    quit code
+  elif lines.len != 2:
+    fatal "expected 2 lines from nix-prefetch-url output, got ", lines.len, "\noutput: ", output
+    quit 1
 
   result.`method` = "fetchzip"
   result.sha256 = lines[0]
@@ -173,8 +173,8 @@ proc nixPrefetchGit(url: string, rev: string): PrefetchData =
   let cmd = fmt"{nixPrefetchGitPath} --url {url} --rev {rev} --fetch-submodules --quiet"
   let (output, code) = execCmdLog(cmd)
   if code != 0:
-    fatal "failed to prefetch: ", url
-    dumpQuit output
+    fatal "failed to prefetch: ", url, "\noutput: ", output
+    quit code
   result = parsePrefetchGit output
   result.`method` = "git"
   result.url = url
