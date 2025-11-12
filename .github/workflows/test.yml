@@ -16,10 +16,8 @@ jobs:
   run-tests:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Install Nix
-      uses: DeterminateSystems/nix-installer-action@main
-    - uses: DeterminateSystems/magic-nix-cache-action@v2
+    - uses: actions/checkout@v5
+    - uses: cachix/install-nix-action@v31
     - name: Setup dependencies
       run: nix develop --command nimble setup -l
     - name: Run Tests
