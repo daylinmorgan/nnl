@@ -1,7 +1,6 @@
 import std/[json, os, unittest, strformat]
 import nnl
 
-
 const
   pkg = "moe-67324a"
   fixtures = currentSourcePath().parentDir / "fixtures"
